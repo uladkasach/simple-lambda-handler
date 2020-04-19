@@ -1,0 +1,71 @@
+{
+  "name": "standard-lambda-handler",
+  "version": "0.0.0",
+  "description": "a simple and opinionated lambda handler library, built with middy",
+  "author": "UladKasach @uladkasach",
+  "license": "MIT",
+  "repository": "uladkasach/standard-lambda-handler",
+  "homepage": "https://github.com/uladkasach/standard-lambda-handler",
+  "keywords": [
+    "aws",
+    "lambda",
+    "cloudwatch",
+    "middy",
+    "errors",
+    "logging",
+    "standard",
+    "handler"
+  ],
+  "bugs": "https://github.com/uladkasach/standard-lambda-handler/issues",
+  "main": "dist/index.js",
+  "engines": {
+    "node": ">=8.0.0"
+  },
+  "files": [
+    "/dist"
+  ],
+  "scripts": {
+    "build:clean": "rm -rf ./dist",
+    "build:ts": "tsc -p ./tsconfig.build.json",
+    "build": "npm run build:clean && npm run build:ts",
+    "test:types": "tsc --noEmit",
+    "test:lint": "eslint -c ./.eslintrc.js src/**/*.ts",
+    "test:unit": "jest --forceExit --coverage --verbose",
+    "test:integration": "echo 'no integration tests'",
+    "test": "npm run test:types && npm run test:lint && npm run test:unit",
+    "prepublish": "npm run build",
+    "preversion": "npm run prepublish && npm run test",
+    "postversion": "git push origin master --tags --no-verify"
+  },
+  "devDependencies": {
+    "@pulumi/aws": "^1.0.0-beta.2",
+    "@pulumi/pulumi": "^1.0.0-beta.4",
+    "@types/aws-lambda": "^8.10.31",
+    "@types/aws-sdk": "^2.7.0",
+    "@types/dotenv": "^6.1.1",
+    "@types/jest": "^24.0.18",
+    "@types/joi": "^14.3.4",
+    "@types/uuid": "^3.4.5",
+    "@typescript-eslint/eslint-plugin": "2.19.0",
+    "@typescript-eslint/parser": "2.19.0",
+    "dotenv": "^8.1.0",
+    "eslint": "6.1.0",
+    "eslint-config-airbnb-base": "14.0.0",
+    "eslint-config-airbnb-typescript": "7.0.0",
+    "eslint-config-prettier": "6.10.0",
+    "eslint-plugin-import": "2.20.1",
+    "eslint-plugin-prettier": "3.1.2",
+    "husky": "^1.3.1",
+    "jest": "^24.8.0",
+    "prettier": "^2.0.4",
+    "ts-jest": "^24.0.2",
+    "typescript": "^3.8.3",
+    "uuid": "^3.3.3"
+  },
+  "dependencies": {
+    "@middy/core": "^1.0.0-beta.11",
+    "aws-lambda": "^0.1.2",
+    "aws-sdk": "^2.517.0",
+    "joi": "^14.3.1"
+  }
+}
