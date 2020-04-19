@@ -61,7 +61,7 @@
   },
   "dependencies": {
     "@middy/core": "^1.0.0-beta.11",
-    "aws-lambda": "^0.1.2",
+    "aws-lambda": "^1.0.5",
     "aws-sdk": "^2.517.0",
     "joi": "^14.3.1"
   }
