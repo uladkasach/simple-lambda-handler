@@ -19,17 +19,19 @@ const testContext: Context = {
   succeed: () => {},
 };
 
-interface PromiseLambdaInvocationParams {
-  event: any;
-  handler: Handler;
-}
+/**
+ * strip down event, like normal request would
+ *
+ * (e.g., remove any "Class" or non stringifiable data on the event. Only things representable as JSON are sent over the wire)
+ */
+const stripInvocationEvent = (event: any) => JSON.parse(JSON.stringify(event));
 
 /**
  * to make it easy to invoke your lambdas, swapping callback syntax to promise syntax
  */
-export const promiseLambdaInvocation = async ({ event, handler }: PromiseLambdaInvocationParams): Promise<any> =>
+export const promiseLambdaInvocation = async <E, R extends any>({ event, handler }: { event: E; handler: Handler }): Promise<R> =>
   new Promise((resolve, reject) => {
-    handler(event, testContext, (error, result) => {
+    handler(stripInvocationEvent(event), testContext, (error: any, result: R) => {
       if (error) return reject(error);
       return resolve(result);
     });
