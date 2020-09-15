@@ -3,9 +3,9 @@ import Joi from 'joi';
 
 import middy from '@middy/core';
 
-import { BadRequestError } from './badRequestErrorMiddleware';
+import { BadRequestError } from '../logic/middlewares/badRequestErrorMiddleware';
 import { createStandardHandler } from './createStandardHandler';
-import { promiseLambdaInvocation } from './testUtil/promiseLambdaInvocation';
+import { promiseHandlerInvocation } from '../logic/testUtil/promiseHandlerInvocation';
 
 describe('createStandardHandler', () => {
   beforeEach(() => jest.clearAllMocks());
@@ -25,7 +25,7 @@ describe('createStandardHandler', () => {
     });
   });
   it('should be possible to get the result of a handler', async () => {
-    const result = await promiseLambdaInvocation({
+    const result = await promiseHandlerInvocation({
       event: { throwInternalError: false, throwBadRequestError: false },
       handler: exampleHandler,
     });
@@ -34,18 +34,18 @@ describe('createStandardHandler', () => {
   it('should log the input and output of a lambda', async () => {
     const consoleLogMock = jest.spyOn(console, 'log');
     const event = { throwInternalError: false, throwBadRequestError: false };
-    await promiseLambdaInvocation({
+    await promiseHandlerInvocation({
       event,
       handler: exampleHandler,
     });
     expect(consoleLogMock).toHaveBeenCalledTimes(2);
-    expect(consoleLogMock).toHaveBeenNthCalledWith(1, 'invocation start', { event });
-    expect(consoleLogMock).toHaveBeenNthCalledWith(2, 'invocation end', { response: 'success' });
+    expect(consoleLogMock).toHaveBeenNthCalledWith(1, 'handler.input', { event });
+    expect(consoleLogMock).toHaveBeenNthCalledWith(2, 'handler.output', { response: 'success' });
   });
   it('should log an error, if an error was thrown', async () => {
     const consoleWarnMock = jest.spyOn(console, 'warn');
     try {
-      await promiseLambdaInvocation({
+      await promiseHandlerInvocation({
         event: { throwInternalError: true, throwBadRequestError: false },
         handler: exampleHandler,
       });
@@ -53,13 +53,13 @@ describe('createStandardHandler', () => {
     } catch (error) {
       expect(error.message).toContain('internal service error');
       expect(consoleWarnMock).toHaveBeenCalledTimes(1);
-      expect(consoleWarnMock).toHaveBeenNthCalledWith(1, 'invocation end', expect.objectContaining({ errorMessage: 'internal service error' }));
+      expect(consoleWarnMock).toHaveBeenNthCalledWith(1, 'handler.error', expect.objectContaining({ errorMessage: 'internal service error' }));
     }
   });
   it('should not report BadRequestErrors as lambda invocation errors and should not log them as an error either', async () => {
     const consoleLogMock = jest.spyOn(console, 'log');
     const consoleWarnMock = jest.spyOn(console, 'warn');
-    const result = await promiseLambdaInvocation({
+    const result = await promiseHandlerInvocation({
       event: { throwInternalError: false, throwBadRequestError: true },
       handler: exampleHandler,
     });
@@ -68,7 +68,7 @@ describe('createStandardHandler', () => {
     expect(consoleLogMock).toHaveBeenCalledTimes(2); // start and end
   });
   it('should return a BadRequestError when joi event validation fails', async () => {
-    const result = await promiseLambdaInvocation({
+    const result = await promiseHandlerInvocation({
       event: { bananas: true },
       handler: exampleHandler,
     });

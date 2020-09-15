@@ -29,7 +29,7 @@ const stripInvocationEvent = (event: any) => JSON.parse(JSON.stringify(event));
 /**
  * to make it easy to invoke your lambdas, swapping callback syntax to promise syntax
  */
-export const promiseLambdaInvocation = async <E, R extends any>({ event, handler }: { event: E; handler: Handler }): Promise<R> =>
+export const promiseHandlerInvocation = async <E, R extends any>({ event, handler }: { event: E; handler: Handler }): Promise<R> =>
   new Promise((resolve, reject) => {
     handler(stripInvocationEvent(event), testContext, (error: any, result: R) => {
       if (error) return reject(error);

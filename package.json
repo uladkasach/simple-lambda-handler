@@ -64,6 +64,9 @@
   },
   "dependencies": {
     "@middy/core": "^1.0.0-beta.11",
+    "@middy/http-cors": "^1.4.0",
+    "@middy/http-json-body-parser": "^1.4.0",
+    "@middy/http-security-headers": "^1.4.0",
     "aws-lambda": "^0.1.2",
     "aws-sdk": "^2.517.0",
     "joi": "^14.3.1"
