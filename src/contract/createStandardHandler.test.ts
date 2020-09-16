@@ -63,7 +63,7 @@ describe('createStandardHandler', () => {
       event: { throwInternalError: false, throwBadRequestError: true },
       handler: exampleHandler,
     });
-    expect(result).toMatchObject({ errorMessage: 'bad request' });
+    expect(result).toMatchObject({ errorMessage: 'bad request', errorType: 'BadRequestError' });
     expect(consoleWarnMock).not.toHaveBeenCalled();
     expect(consoleLogMock).toHaveBeenCalledTimes(2); // start and end
   });

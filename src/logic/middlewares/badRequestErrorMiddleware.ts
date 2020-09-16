@@ -39,11 +39,14 @@ export const badRequestErrorMiddleware = (opts?: { apiGateway?: boolean }) => {
       const response = opts?.apiGateway
         ? {
             statusCode: 400,
-            body: { errorMessage: handler.error.message, errorType: handler.error.name },
+            body: {
+              errorMessage: handler.error.message,
+              errorType: 'BadRequestError',
+            },
           }
         : {
             errorMessage: handler.error.message,
-            errorType: handler.error.name,
+            errorType: 'BadRequestError',
             stackTrace: handler.error.stack,
           };
 

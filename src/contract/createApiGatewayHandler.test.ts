@@ -97,7 +97,8 @@ describe('createApiGatewayHandler', () => {
         handler: exampleHandler,
       });
       expect(result).toMatchObject({ statusCode: 400 });
-      expect(result).toHaveProperty('body'); // no body -> without details
+      expect(result).toHaveProperty('body');
+      expect(result.body).toMatchObject({ errorMessage: 'bad request', errorType: 'BadRequestError' });
     });
     it('should not log a warning if a BadRequestError occurs', async () => {
       const consoleWarnMock = jest.spyOn(console, 'warn');

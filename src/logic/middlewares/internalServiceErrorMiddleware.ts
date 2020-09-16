@@ -15,7 +15,10 @@ export const internalServiceErrorMiddleware = ({ logError, apiGateway }: { logEr
     if (handler.error instanceof BadRequestError) return handler.error; // return error to pass it up the chain, since we're not handling it here
 
     // 2. log the error
-    logError('handler.error', { errorMessage: handler.error.message, stackTrace: handler.error.stack });
+    logError('handler.error', {
+      errorMessage: handler.error.message,
+      stackTrace: handler.error.stack,
+    });
 
     // 3. if we're in the api gateway context, then we want to handle this error and return a standard api gateway response for it
     if (apiGateway) {
