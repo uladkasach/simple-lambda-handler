@@ -1,6 +1,6 @@
 {
   "name": "standard-lambda-handler",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "a simple and opinionated lambda handler library, built with middy",
   "author": "UladKasach @uladkasach",
   "license": "MIT",
