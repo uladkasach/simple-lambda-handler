@@ -1,7 +1,7 @@
 import Joi from 'joi';
 import { Context } from 'aws-lambda';
 
-export type HandlerLogic<I, O> = (event: I, context?: Context) => Promise<O>;
+export type HandlerLogic<I, O, C = Context> = (event: I, context: C) => Promise<O>;
 
 export type EventSchema = Joi.ObjectSchema | Joi.AnySchema;
 

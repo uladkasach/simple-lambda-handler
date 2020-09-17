@@ -1,3 +1,5 @@
+import { APIGatewayEventRequestContext } from 'aws-lambda';
+
 import middy from '@middy/core';
 import httpCors from '@middy/http-cors';
 import httpJsonBodyParser from '@middy/http-json-body-parser';
@@ -9,7 +11,7 @@ import { ioLoggingMiddleware } from '../logic/middlewares/ioLoggingMiddleware';
 import { joiEventValidationMiddleware } from '../logic/middlewares/joiEventValidationMiddleware';
 import { EventSchema, HandlerLogic, LogMethods } from '../model/general';
 
-export type ApiGatewayHandlerLogic = HandlerLogic<{ body: any }, { statusCode: 200; body: any }>;
+export type ApiGatewayHandlerLogic = HandlerLogic<{ body: any }, { statusCode: 200; body: any }, APIGatewayEventRequestContext>;
 
 const corsInputToCorsConfig = (cors?: boolean | { origins: string[] }) => {
   const corsConfig = cors === true ? undefined : cors; // `cors` is either the config object, or just a `true`. if not `true`, then it must be config
@@ -37,5 +39,7 @@ export const createApiGatewayHandler = ({
     httpJsonBodyParser(), // converts JSON body to object, when present; throws UnprocessableEntity (422 errors) for malformed json
     joiEventValidationMiddleware({ schema }), // validate the input against a schema
   ];
-  return middy(logic).use(middlewares);
+  return middy(
+    logic as any, // as any, since ApiGatewayHandlerLogic uses the, correctly, `APIGatewayEventRequestContext` - while middy expects the normal `Context` only (https://github.com/middyjs/middy/issues/540)
+  ).use(middlewares);
 };

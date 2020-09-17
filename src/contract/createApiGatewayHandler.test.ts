@@ -163,4 +163,39 @@ describe('createApiGatewayHandler', () => {
       expect(result.statusCode).toEqual(400); // should return as a BadRequestError
     });
   });
+  describe('context', () => {
+    it.only('a handler should be able to use context.authorizer.claims - which is a common use case for flows using jwt authorizers', async () => {
+      // per https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-jwt-authorizer.html
+      const handler = createApiGatewayHandler({
+        logic: async (event: { body: string }, context) => ({
+          statusCode: 200,
+          body: `${context.authorizer!.claims.sub}:${event.body}`,
+        }),
+        schema: Joi.object().keys({
+          httpMethod: Joi.string().required(),
+          body: Joi.string().required(),
+        }),
+        log: {
+          debug: (message, metadata) => console.log(message, metadata), // eslint-disable-line no-console
+          error: (message, metadata) => console.warn(message, metadata), //  eslint-disable-line no-console
+        },
+      });
+      const result = await promiseHandlerInvocation({
+        event: {
+          httpMethod: 'POST', // cors only get set if there is a `httpMethod` in the request
+          body: 'hello!',
+        },
+        context: {
+          authorizer: {
+            // per the docs, the authorizers spit out the claims here: https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-jwt-authorizer.html
+            claims: {
+              sub: 'beefbeef-beef-beef-beef-beefbeefbeef', // some user id
+            },
+          },
+        },
+        handler,
+      });
+      expect(result.body).toEqual('beefbeef-beef-beef-beef-beefbeefbeef:hello!');
+    });
+  });
 });
