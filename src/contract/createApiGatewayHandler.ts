@@ -11,7 +11,11 @@ import { ioLoggingMiddleware } from '../logic/middlewares/ioLoggingMiddleware';
 import { joiEventValidationMiddleware } from '../logic/middlewares/joiEventValidationMiddleware';
 import { EventSchema, HandlerLogic, LogMethods } from '../model/general';
 
-export type ApiGatewayHandlerLogic = HandlerLogic<{ body: any }, { statusCode: 200; body: any }, APIGatewayEventRequestContext>;
+export type ApiGatewayHandlerLogic = HandlerLogic<
+  { httpMethod: any; headers: any; body: any },
+  { statusCode: 200; body: any },
+  APIGatewayEventRequestContext
+>;
 
 const corsInputToCorsConfig = (cors?: boolean | { origins: string[] }) => {
   const corsConfig = cors === true ? undefined : cors; // `cors` is either the config object, or just a `true`. if not `true`, then it must be config

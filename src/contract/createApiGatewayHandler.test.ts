@@ -163,8 +163,43 @@ describe('createApiGatewayHandler', () => {
       expect(result.statusCode).toEqual(400); // should return as a BadRequestError
     });
   });
+  describe('headers', () => {
+    test('a handler should be able to access the Authorization header of an event payload - which is a common use case for flows using jwt', async () => {
+      const handler = createApiGatewayHandler({
+        logic: async (event: { headers: { Authorization: string }; body: string }) => ({
+          statusCode: 200,
+          body: `${event.headers.Authorization}:${event.body}`,
+        }),
+        schema: Joi.object().keys({
+          httpMethod: Joi.string().required(),
+          headers: Joi.object()
+            .keys({
+              Authorization: Joi.string().required(),
+            })
+            .required()
+            .unknown(), // allow other headers, since there always are
+          body: Joi.string().required(),
+        }),
+        log: {
+          debug: (message, metadata) => console.log(message, metadata), // eslint-disable-line no-console
+          error: (message, metadata) => console.warn(message, metadata), //  eslint-disable-line no-console
+        },
+      });
+      const result = await promiseHandlerInvocation({
+        event: {
+          httpMethod: 'POST', // cors only get set if there is a `httpMethod` in the request
+          headers: {
+            Authorization: 'Bearer __TOKEN_GOES_HERE__',
+          },
+          body: 'hello!',
+        },
+        handler,
+      });
+      expect(result.body).toEqual('Bearer __TOKEN_GOES_HERE__:hello!');
+    });
+  });
   describe('context', () => {
-    it.only('a handler should be able to use context.authorizer.claims - which is a common use case for flows using jwt authorizers', async () => {
+    test('a handler should be able to use context.authorizer.claims - which is a common use case for flows using jwt authorizers', async () => {
       // per https://docs.aws.amazon.com/apigateway/latest/developerguide/http-api-jwt-authorizer.html
       const handler = createApiGatewayHandler({
         logic: async (event: { body: string }, context) => ({
