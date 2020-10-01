@@ -40,7 +40,7 @@ describe('createApiGatewayHandler', () => {
         event: { httpMethod: 'POST', body: { throwInternalError: false, throwBadRequestError: false } },
         handler: exampleHandler,
       });
-      expect(result).toMatchObject({ statusCode: 200, body: 'success' });
+      expect(result).toMatchObject({ statusCode: 200, body: '"success"' });
     });
     it('should log input and output', async () => {
       const consoleLogMock = jest.spyOn(console, 'log');
@@ -56,7 +56,7 @@ describe('createApiGatewayHandler', () => {
         'handler.output',
         expect.objectContaining({
           response: expect.objectContaining({
-            body: 'success',
+            body: '"success"',
             statusCode: 200,
           }),
         }),
@@ -76,7 +76,7 @@ describe('createApiGatewayHandler', () => {
         handler: exampleHandler,
       });
       expect(result).toMatchObject({ statusCode: 500 });
-      expect(result).not.toHaveProperty('body'); // no body -> without details
+      expect(result.body).toEqual(undefined); // no body -> without details
     });
     it('should log a warning when an error occurs', async () => {
       const consoleWarnMock = jest.spyOn(console, 'warn');
@@ -98,7 +98,7 @@ describe('createApiGatewayHandler', () => {
       });
       expect(result).toMatchObject({ statusCode: 400 });
       expect(result).toHaveProperty('body');
-      expect(result.body).toMatchObject({ errorMessage: 'bad request', errorType: 'BadRequestError' });
+      expect(result.body).toEqual(JSON.stringify({ errorMessage: 'bad request', errorType: 'BadRequestError' }));
     });
     it('should not log a warning if a BadRequestError occurs', async () => {
       const consoleWarnMock = jest.spyOn(console, 'warn');
@@ -195,7 +195,7 @@ describe('createApiGatewayHandler', () => {
         },
         handler,
       });
-      expect(result.body).toEqual('Bearer __TOKEN_GOES_HERE__:hello!');
+      expect(result.body).toEqual('"Bearer __TOKEN_GOES_HERE__:hello!"');
     });
   });
   describe('context', () => {
@@ -230,7 +230,65 @@ describe('createApiGatewayHandler', () => {
         },
         handler,
       });
-      expect(result.body).toEqual('beefbeef-beef-beef-beef-beefbeefbeef:hello!');
+      expect(result.body).toEqual('"beefbeef-beef-beef-beef-beefbeefbeef:hello!"');
+    });
+  });
+  describe('serialization', () => {
+    test('handler serializes the response body', async () => {
+      // otherwise, api gateway will throw an error saying "Lambda body contains the wrong type for field "body""
+      const handler = createApiGatewayHandler({
+        logic: async (event: { body: { throwBadRequestError?: boolean } }) => {
+          if (event.body.throwBadRequestError) throw new BadRequestError('you asked for it, bud');
+          return {
+            statusCode: 200,
+            body: { hello: 'there' },
+          };
+        },
+        schema: Joi.object().keys({
+          httpMethod: Joi.string().required(),
+          body: Joi.string().required(),
+        }),
+        log: {
+          debug: (message, metadata) => console.log(message, metadata), // eslint-disable-line no-console
+          error: (message, metadata) => console.warn(message, metadata), //  eslint-disable-line no-console
+        },
+      });
+      const result = await promiseHandlerInvocation({
+        event: {
+          httpMethod: 'POST', // cors only get set if there is a `httpMethod` in the request
+          body: 'hello!',
+        },
+        handler,
+      });
+      expect(result.body).toEqual('{"hello":"there"}');
+    });
+    test('a handler serializes the response body even for bad request errors', async () => {
+      // otherwise, api gateway will throw an error saying "Lambda body contains the wrong type for field "body""
+      const handler = createApiGatewayHandler({
+        logic: async (event: { body: { throwBadRequestError?: boolean } }) => {
+          if (event.body.throwBadRequestError) throw new BadRequestError('you asked for it, bud');
+          return {
+            statusCode: 200,
+            body: { hello: 'there' },
+          };
+        },
+        schema: Joi.object().keys({
+          httpMethod: Joi.string().required(),
+          body: Joi.any(),
+        }),
+        log: {
+          debug: (message, metadata) => console.log(message, metadata), // eslint-disable-line no-console
+          error: (message, metadata) => console.warn(message, metadata), //  eslint-disable-line no-console
+        },
+      });
+      const result = await promiseHandlerInvocation({
+        event: {
+          httpMethod: 'POST', // cors only get set if there is a `httpMethod` in the request
+          body: { throwBadRequestError: true },
+        },
+        handler,
+      });
+      expect(result.body).toEqual('{"errorMessage":"you asked for it, bud","errorType":"BadRequestError"}');
     });
   });
 });

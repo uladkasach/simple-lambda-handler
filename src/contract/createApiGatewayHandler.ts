@@ -2,8 +2,9 @@ import { APIGatewayEventRequestContext } from 'aws-lambda';
 
 import middy from '@middy/core';
 import httpCors from '@middy/http-cors';
-import httpJsonBodyParser from '@middy/http-json-body-parser';
+import httpRequestJsonBodyParser from '@middy/http-json-body-parser';
 import httpSecurityHeaders from '@middy/http-security-headers';
+import httpResponseSerializer from '@middy/http-response-serializer';
 
 import { badRequestErrorMiddleware } from '../logic/middlewares/badRequestErrorMiddleware';
 import { internalServiceErrorMiddleware } from '../logic/middlewares/internalServiceErrorMiddleware';
@@ -23,6 +24,13 @@ const corsInputToCorsConfig = (cors?: boolean | { origins: string[] }) => {
   return { ...corsDefaults, ...corsConfig };
 };
 
+const serializers = [
+  {
+    regex: /^application\/json$/,
+    serializer: ({ body }: { body: any }) => JSON.stringify(body),
+  },
+];
+
 export const createApiGatewayHandler = ({
   log,
   schema,
@@ -40,8 +48,9 @@ export const createApiGatewayHandler = ({
     ...(cors ? [httpCors(corsInputToCorsConfig(cors))] : []), // adds cors headers to response, if cors was requested
     httpSecurityHeaders(), // adds best practice headers to the request; (!) note, also handles any uncaught errors to return them as statusCode: 500 responses
     ioLoggingMiddleware({ logDebug: log.debug }), // log the input and output to the lambda, for debugging
-    httpJsonBodyParser(), // converts JSON body to object, when present; throws UnprocessableEntity (422 errors) for malformed json
+    httpRequestJsonBodyParser(), // converts JSON body to object, when present; throws UnprocessableEntity (422 errors) for malformed json
     joiEventValidationMiddleware({ schema }), // validate the input against a schema
+    httpResponseSerializer({ serializers, default: 'application/json' }),
   ];
   return middy(
     logic as any, // as any, since ApiGatewayHandlerLogic uses the, correctly, `APIGatewayEventRequestContext` - while middy expects the normal `Context` only (https://github.com/middyjs/middy/issues/540)
