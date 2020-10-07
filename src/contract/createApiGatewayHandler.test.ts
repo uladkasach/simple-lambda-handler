@@ -1,10 +1,10 @@
 import { Context } from 'aws-lambda';
 import Joi from 'joi';
+import { invokeHandlerForTesting } from 'simple-lambda-testing-methods';
 
 import middy from '@middy/core';
 
 import { BadRequestError } from '../logic/middlewares/badRequestErrorMiddleware';
-import { promiseHandlerInvocation } from '../logic/testUtil/promiseHandlerInvocation';
 import { createApiGatewayHandler } from './createApiGatewayHandler';
 
 describe('createApiGatewayHandler', () => {
@@ -36,7 +36,7 @@ describe('createApiGatewayHandler', () => {
   });
   describe('successful invocations', () => {
     it('should return result of handler', async () => {
-      const result = await promiseHandlerInvocation({
+      const result = await invokeHandlerForTesting({
         event: { httpMethod: 'POST', body: { throwInternalError: false, throwBadRequestError: false } },
         handler: exampleHandler,
       });
@@ -45,7 +45,7 @@ describe('createApiGatewayHandler', () => {
     it('should log input and output', async () => {
       const consoleLogMock = jest.spyOn(console, 'log');
       const event = { httpMethod: 'POST', body: { throwInternalError: false, throwBadRequestError: false } };
-      await promiseHandlerInvocation({
+      await invokeHandlerForTesting({
         event,
         handler: exampleHandler,
       });
@@ -71,7 +71,7 @@ describe('createApiGatewayHandler', () => {
        * NOTE: this is different to the standard handler as the standard handler actually throws, in order to register as an error in cloudwatch.
        *  In this case though, API Gateway does that for us because we still need to share _a_ response with the user
        */
-      const result = await promiseHandlerInvocation({
+      const result = await invokeHandlerForTesting({
         event: { httpMethod: 'POST', body: { throwInternalError: true, throwBadRequestError: false } },
         handler: exampleHandler,
       });
@@ -80,7 +80,7 @@ describe('createApiGatewayHandler', () => {
     });
     it('should log a warning when an error occurs', async () => {
       const consoleWarnMock = jest.spyOn(console, 'warn');
-      await promiseHandlerInvocation({
+      await invokeHandlerForTesting({
         event: { httpMethod: 'POST', body: { throwInternalError: true, throwBadRequestError: false } },
         handler: exampleHandler,
       });
@@ -92,7 +92,7 @@ describe('createApiGatewayHandler', () => {
        * with details because we want to help the user unblock themselves
        * - and since its a `BadRequestError` that means that we thought about the message to return
        */
-      const result = await promiseHandlerInvocation({
+      const result = await invokeHandlerForTesting({
         event: { httpMethod: 'POST', body: { throwInternalError: false, throwBadRequestError: true } },
         handler: exampleHandler,
       });
@@ -102,7 +102,7 @@ describe('createApiGatewayHandler', () => {
     });
     it('should not log a warning if a BadRequestError occurs', async () => {
       const consoleWarnMock = jest.spyOn(console, 'warn');
-      await promiseHandlerInvocation({
+      await invokeHandlerForTesting({
         event: { httpMethod: 'POST', body: { throwInternalError: false, throwBadRequestError: true } },
         handler: exampleHandler,
       });
@@ -111,7 +111,7 @@ describe('createApiGatewayHandler', () => {
   });
   describe('cors', () => {
     it('should return correct cors headers when cors is requested - successful response', async () => {
-      const result = await promiseHandlerInvocation({
+      const result = await invokeHandlerForTesting({
         event: {
           httpMethod: 'POST', // cors only get set if there is a `httpMethod` in the request
           body: { throwInternalError: false, throwBadRequestError: false },
@@ -126,7 +126,7 @@ describe('createApiGatewayHandler', () => {
       });
     });
     it('should return correct cors headers when cors is requested - error response', async () => {
-      const result = await promiseHandlerInvocation({
+      const result = await invokeHandlerForTesting({
         event: {
           httpMethod: 'POST', // cors only get set if there is a `httpMethod` in the request
           body: { throwInternalError: true, throwBadRequestError: false },
@@ -143,7 +143,7 @@ describe('createApiGatewayHandler', () => {
   });
   describe('validation', () => {
     it('should not throw an error when the validation schema expects the body property to be an object, since it should be serialized before validation', async () => {
-      const result = await promiseHandlerInvocation({
+      const result = await invokeHandlerForTesting({
         event: {
           httpMethod: 'POST', // cors only get set if there is a `httpMethod` in the request
           body: { throwInternalError: false, throwBadRequestError: false },
@@ -153,7 +153,7 @@ describe('createApiGatewayHandler', () => {
       expect(result.statusCode).toEqual(200); // sanity check that it succeeded
     });
     it('should throw an error if the parsed body object does not match validation, which should be returned as an httpError response', async () => {
-      const result = await promiseHandlerInvocation({
+      const result = await invokeHandlerForTesting({
         event: {
           httpMethod: 'POST', // cors only get set if there is a `httpMethod` in the request
           body: { something: 'unexpected' },
@@ -185,7 +185,7 @@ describe('createApiGatewayHandler', () => {
           error: (message, metadata) => console.warn(message, metadata), //  eslint-disable-line no-console
         },
       });
-      const result = await promiseHandlerInvocation({
+      const result = await invokeHandlerForTesting({
         event: {
           httpMethod: 'POST', // cors only get set if there is a `httpMethod` in the request
           headers: {
@@ -215,7 +215,7 @@ describe('createApiGatewayHandler', () => {
           error: (message, metadata) => console.warn(message, metadata), //  eslint-disable-line no-console
         },
       });
-      const result = await promiseHandlerInvocation({
+      const result = await invokeHandlerForTesting({
         event: {
           httpMethod: 'POST', // cors only get set if there is a `httpMethod` in the request
           body: 'hello!',
@@ -253,7 +253,7 @@ describe('createApiGatewayHandler', () => {
           error: (message, metadata) => console.warn(message, metadata), //  eslint-disable-line no-console
         },
       });
-      const result = await promiseHandlerInvocation({
+      const result = await invokeHandlerForTesting({
         event: {
           httpMethod: 'POST', // cors only get set if there is a `httpMethod` in the request
           body: 'hello!',
@@ -281,7 +281,7 @@ describe('createApiGatewayHandler', () => {
           error: (message, metadata) => console.warn(message, metadata), //  eslint-disable-line no-console
         },
       });
-      const result = await promiseHandlerInvocation({
+      const result = await invokeHandlerForTesting({
         event: {
           httpMethod: 'POST', // cors only get set if there is a `httpMethod` in the request
           body: { throwBadRequestError: true },

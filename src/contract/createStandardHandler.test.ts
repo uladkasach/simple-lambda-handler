@@ -1,11 +1,11 @@
 import { Context } from 'aws-lambda';
 import Joi from 'joi';
+import { invokeHandlerForTesting } from 'simple-lambda-testing-methods';
 
 import middy from '@middy/core';
 
 import { BadRequestError } from '../logic/middlewares/badRequestErrorMiddleware';
 import { createStandardHandler } from './createStandardHandler';
-import { promiseHandlerInvocation } from '../logic/testUtil/promiseHandlerInvocation';
 
 describe('createStandardHandler', () => {
   beforeEach(() => jest.clearAllMocks());
@@ -25,7 +25,7 @@ describe('createStandardHandler', () => {
     });
   });
   it('should be possible to get the result of a handler', async () => {
-    const result = await promiseHandlerInvocation({
+    const result = await invokeHandlerForTesting({
       event: { throwInternalError: false, throwBadRequestError: false },
       handler: exampleHandler,
     });
@@ -34,7 +34,7 @@ describe('createStandardHandler', () => {
   it('should log the input and output of a lambda', async () => {
     const consoleLogMock = jest.spyOn(console, 'log');
     const event = { throwInternalError: false, throwBadRequestError: false };
-    await promiseHandlerInvocation({
+    await invokeHandlerForTesting({
       event,
       handler: exampleHandler,
     });
@@ -45,7 +45,7 @@ describe('createStandardHandler', () => {
   it('should log an error, if an error was thrown', async () => {
     const consoleWarnMock = jest.spyOn(console, 'warn');
     try {
-      await promiseHandlerInvocation({
+      await invokeHandlerForTesting({
         event: { throwInternalError: true, throwBadRequestError: false },
         handler: exampleHandler,
       });
@@ -59,7 +59,7 @@ describe('createStandardHandler', () => {
   it('should not report BadRequestErrors as lambda invocation errors and should not log them as an error either', async () => {
     const consoleLogMock = jest.spyOn(console, 'log');
     const consoleWarnMock = jest.spyOn(console, 'warn');
-    const result = await promiseHandlerInvocation({
+    const result = await invokeHandlerForTesting({
       event: { throwInternalError: false, throwBadRequestError: true },
       handler: exampleHandler,
     });
@@ -68,7 +68,7 @@ describe('createStandardHandler', () => {
     expect(consoleLogMock).toHaveBeenCalledTimes(2); // start and end
   });
   it('should return a BadRequestError when joi event validation fails', async () => {
-    const result = await promiseHandlerInvocation({
+    const result = await invokeHandlerForTesting({
       event: { bananas: true },
       handler: exampleHandler,
     });
