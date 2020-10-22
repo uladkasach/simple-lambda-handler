@@ -21,7 +21,7 @@ import middy from '@middy/core';
  *
  * For situations where the request is invalid and should be reported to the client as such. Used in situations where the business logic proactively rejects this request.
  *
- * The purpose of distinguishing this type of error is that it will not show up in CloudWatch, when used with [standard-lambda-handler](https://github.com/uladkasach/standard-lambda-handler).
+ * The purpose of distinguishing this type of error is that it will not show up in CloudWatch, when used with [simple-lambda-handlers](https://github.com/uladkasach/simple-lambda-handlers).
  *
  * Why? because a BadRequestError means that the problem is with the client's request, not the internal workings of this service. I.e., this service is functioning as intended and any debugging needs to be done in the client who called this.
  *

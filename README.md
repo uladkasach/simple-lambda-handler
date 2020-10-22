@@ -1,11 +1,11 @@
-# standard-lambda-handler
+# simple-lambda-handlers
 
 a simple and opinionated lambda handler library, built with [middy](https://github.com/middyjs/middy).
 
 # installation
 
 ```
-npm install --save standard-lambda-handler
+npm install --save simple-lambda-handlers
 ```
 
 # usage
@@ -14,7 +14,7 @@ Here is a quick example that shows how you can wrap your handler logic, do addit
 
 ```ts
 // e.g., in `src/handlers/sendUserNotification.ts
-import { createStandardHandler, BadRequestError } from 'standard-lambda-handler';
+import { createStandardHandler, BadRequestError } from 'simple-lambda-handlers';
 import Joi from 'joi';
 
 const schema = Joi.object().keys({
@@ -74,7 +74,7 @@ This library takes care of that, so that the only errors that are reported as in
 Example:
 
 ```ts
-import { BadRequestError } from 'standard-lambda-handler';
+import { BadRequestError } from 'simple-lambda-handlers';
 // ...
 const user = await findUserByUuid({ uuid });
 if (!user) throw new BadRequestError(`user not found for uuid '${uuid}'`);
