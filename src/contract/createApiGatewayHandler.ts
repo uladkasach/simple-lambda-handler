@@ -14,7 +14,7 @@ import { EventSchema, HandlerLogic, LogMethods } from '../model/general';
 
 export type ApiGatewayHandlerLogic = HandlerLogic<
   { httpMethod: any; headers: any; body: any },
-  { statusCode: 200; body: any },
+  { statusCode: 200; headers?: any; body: any },
   APIGatewayEventRequestContext
 >;
 

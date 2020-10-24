@@ -197,6 +197,33 @@ describe('createApiGatewayHandler', () => {
       });
       expect(result.body).toEqual('"Bearer __TOKEN_GOES_HERE__:hello!"');
     });
+    test('a handler should be able to set custom headers in the response', async () => {
+      const handler = createApiGatewayHandler({
+        logic: async () => ({
+          statusCode: 200,
+          headers: {
+            'Set-Cookie': 'authorization=__JWT__',
+          },
+          body: `hello!`,
+        }),
+        schema: Joi.object().keys({
+          body: Joi.string().required(),
+        }),
+        log: {
+          debug: (message, metadata) => console.log(message, metadata), // eslint-disable-line no-console
+          error: (message, metadata) => console.warn(message, metadata), //  eslint-disable-line no-console
+        },
+      });
+      const result = await invokeHandlerForTesting({
+        event: { body: JSON.stringify({}) },
+        handler,
+      });
+      expect(result.headers).toEqual(
+        expect.objectContaining({
+          'Set-Cookie': 'authorization=__JWT__',
+        }),
+      );
+    });
   });
   describe('context', () => {
     test('a handler should be able to use context.authorizer.claims - which is a common use case for flows using jwt authorizers', async () => {
