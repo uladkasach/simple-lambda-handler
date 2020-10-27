@@ -19,6 +19,7 @@ describe('createApiGatewayHandler', () => {
       },
       schema: Joi.object().keys({
         httpMethod: Joi.string().required(),
+        headers: Joi.object(),
         body: Joi.object()
           .keys({
             // expects body to be an object, which is ok, because we serialize json bodies before validating
@@ -28,8 +29,9 @@ describe('createApiGatewayHandler', () => {
           .required(),
       }),
       log: {
-        debug: (message, metadata) => console.log(message, metadata), // eslint-disable-line no-console
-        error: (message, metadata) => console.warn(message, metadata), //  eslint-disable-line no-console
+        // note: we JSON.parse(JSON.stringify((...)) so that the log metadata is accessed by value, not reference (otherwise, expect to have been called with object changes over time, even after the log message results, if mocking or spying on it)
+        debug: (message, metadata) => console.log(message, JSON.parse(JSON.stringify(metadata))), // eslint-disable-line no-console
+        error: (message, metadata) => console.warn(message, JSON.parse(JSON.stringify(metadata))), //  eslint-disable-line no-console
       },
       cors: true,
     });
@@ -139,6 +141,58 @@ describe('createApiGatewayHandler', () => {
           'Access-Control-Allow-Credentials': 'true', // Required for cookies, authorization headers with HTTPS
         },
       });
+    });
+    it('should target the accessControlAllowOrigin to the request.origin, if request.origin is defined', async () => {
+      const result = await invokeHandlerForTesting({
+        event: {
+          httpMethod: 'POST', // cors only get set if there is a `httpMethod` in the request
+          headers: {
+            origin: 'https://www.ahbode.com',
+          },
+          body: { throwInternalError: false, throwBadRequestError: false },
+        },
+        handler: exampleHandler,
+      });
+      expect(result).toMatchObject({
+        headers: {
+          'Access-Control-Allow-Origin': 'https://www.ahbode.com', // note that it now targets ahbode.com specifically, not '*'
+        },
+      });
+    });
+    it('should include cors headers in the io log output', async () => {
+      const debugMock = jest.fn();
+      const errorMock = jest.fn();
+      const handler = createApiGatewayHandler({
+        logic: async () => {
+          return { statusCode: 200, body: 'success' };
+        },
+        schema: Joi.object(),
+        log: {
+          debug: (message, metadata) => debugMock(message, JSON.parse(JSON.stringify(metadata))), // eslint-disable-line no-console
+          error: (message, metadata) => errorMock(message, JSON.parse(JSON.stringify(metadata))), //  eslint-disable-line no-console
+        },
+        cors: true,
+      });
+      const result = await invokeHandlerForTesting({
+        event: {
+          httpMethod: 'POST', // cors only get set if there is a `httpMethod` in the request
+        },
+        handler,
+      });
+      expect(result.statusCode).toEqual(200);
+      expect(result.headers['Access-Control-Allow-Origin']).toEqual('*');
+      expect(debugMock).toHaveBeenNthCalledWith(1, 'handler.input', { event: { httpMethod: 'POST' } });
+      expect(debugMock).toHaveBeenNthCalledWith(2, 'handler.output', {
+        response: {
+          statusCode: 200,
+          body: '"success"',
+          headers: expect.objectContaining({
+            'Access-Control-Allow-Credentials': 'true',
+            'Access-Control-Allow-Origin': '*',
+          }),
+        },
+      });
+      expect(debugMock).toHaveBeenCalledTimes(2);
     });
   });
   describe('validation', () => {
