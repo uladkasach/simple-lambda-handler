@@ -18,7 +18,7 @@ export type ApiGatewayHandlerLogic = HandlerLogic<
   APIGatewayEventRequestContext
 >;
 
-interface CORSOptions {
+export interface CORSOptions {
   /**
    * Specifies which origins to accept, setting the `Access-Control-Allow-Origin` header.
    *
