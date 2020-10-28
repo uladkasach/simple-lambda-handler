@@ -33,7 +33,7 @@ describe('createApiGatewayHandler', () => {
         debug: (message, metadata) => console.log(message, JSON.parse(JSON.stringify(metadata))), // eslint-disable-line no-console
         error: (message, metadata) => console.warn(message, JSON.parse(JSON.stringify(metadata))), //  eslint-disable-line no-console
       },
-      cors: true,
+      cors: { origins: '*', withCredentials: true },
     });
   });
   describe('successful invocations', () => {
@@ -142,7 +142,7 @@ describe('createApiGatewayHandler', () => {
         },
       });
     });
-    it('should target the accessControlAllowOrigin to the request.origin, if request.origin is defined', async () => {
+    it('should target the accessControlAllowOrigin to the request.origin, if withCredentials=true and request.origin is defined', async () => {
       const result = await invokeHandlerForTesting({
         event: {
           httpMethod: 'POST', // cors only get set if there is a `httpMethod` in the request
@@ -159,6 +159,23 @@ describe('createApiGatewayHandler', () => {
         },
       });
     });
+    it('should set default accepted cors headers', async () => {
+      const result = await invokeHandlerForTesting({
+        event: {
+          httpMethod: 'POST', // cors only get set if there is a `httpMethod` in the request
+          headers: {
+            origin: 'https://www.ahbode.com',
+          },
+          body: { throwInternalError: false, throwBadRequestError: false },
+        },
+        handler: exampleHandler,
+      });
+      expect(result).toMatchObject({
+        headers: {
+          'Access-Control-Allow-Headers': 'content-type,authorization',
+        },
+      });
+    });
     it('should include cors headers in the io log output', async () => {
       const debugMock = jest.fn();
       const errorMock = jest.fn();
@@ -171,7 +188,7 @@ describe('createApiGatewayHandler', () => {
           debug: (message, metadata) => debugMock(message, JSON.parse(JSON.stringify(metadata))), // eslint-disable-line no-console
           error: (message, metadata) => errorMock(message, JSON.parse(JSON.stringify(metadata))), //  eslint-disable-line no-console
         },
-        cors: true,
+        cors: { origins: '*', withCredentials: true },
       });
       const result = await invokeHandlerForTesting({
         event: {

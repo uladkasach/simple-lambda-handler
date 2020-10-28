@@ -18,10 +18,63 @@ export type ApiGatewayHandlerLogic = HandlerLogic<
   APIGatewayEventRequestContext
 >;
 
-const corsInputToCorsConfig = (cors?: boolean | { origins: string[] }) => {
-  const corsConfig = cors === true ? undefined : cors; // `cors` is either the config object, or just a `true`. if not `true`, then it must be config
-  const corsDefaults = { credentials: true };
-  return { ...corsDefaults, ...corsConfig };
+interface CORSOptions {
+  /**
+   * Specifies which origins to accept, setting the `Access-Control-Allow-Origin` header.
+   *
+   * This header notifies clients (i.e., browsers) that this server expects and accounts for cross-origin-requests from specific domains.
+   *
+   * Requiring the server to "opt-in" to requests from specific origins protects the users from cross-site attacks.
+   *  - for example
+   *    - an attacker clones your website and publishes it at `evil.attacker.com`
+   *      - without CORS, your user's browser would happily send requests to your server from `evil.attacker.com`
+   *      - with CORS, your user's browser will see that your server does not expect requests from `evil.attacker.com` and will protect the user
+   *
+   * You should make the origin as restrictive as possible, to enable the browser to best help users.
+   *
+   * Special options:
+   * - `*`, if set to `*`, the browser will be notified that this server expects requests from all origins, telling the browser that you have considered the cross-site-security concerns that CORS prevents and are ok with the risk
+   *
+   * Refs:
+   * - https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS
+   */
+  origins: '*' | string[];
+
+  /**
+   * When true, sets `Access-Control-Allow-Credentials=true` header, telling browsers to send/accept cookies to/from this server.
+   *
+   * This header notifies clients (i.e., browsers) that this server expects and accounts for cross-origin-request cookies (i.e., credentials) being sent or returned. Requiring the server to "opt-in" to setting and receiving cookies on browsers in cross-site requests protects the user from cross-site attacks.
+   *
+   * Special considerations:
+   * - if the `origins` option is set to `*`, the `Access-Control-Allow-Origin` will be updated to match the request origin. (Browsers do not allow `*` as the origin with credentials turned on)
+   *   - https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS/Errors/CORSNotSupportingCredentials
+   *
+   * refs
+   *  - https://stackoverflow.com/a/24689738/3068233
+   */
+  withCredentials: boolean;
+
+  /**
+   * Specifies which HTTP headers can be used in CORS requests, by setting the `Access-Control-Allow-Headers` header.
+   *
+   * This response is used by preflight requests.
+   *
+   * Defaults to `content-type,authorization`
+   * - `content-type` is present in most requests
+   * - `authorization` is a standard header in JWT based authentication patterns
+   */
+  headers?: string;
+}
+
+const corsInputToCorsConfig = (cors: CORSOptions) => {
+  return {
+    origin: cors.origins === '*' ? '*' : undefined,
+    origins: Array.isArray(cors.origins) ? cors.origins : undefined,
+    credentials: cors.withCredentials,
+    headers: cors.headers ?? 'content-type,authorization', // default to 'content-type,authorization'
+    maxAge: undefined,
+    cacheControl: undefined,
+  };
 };
 
 const serializers = [
@@ -35,12 +88,12 @@ export const createApiGatewayHandler = ({
   log,
   schema,
   logic,
-  cors = false,
+  cors,
 }: {
   logic: ApiGatewayHandlerLogic;
   schema: EventSchema; // for event validation
   log: LogMethods; // for standard logging
-  cors?: boolean | { origins: string[] }; // for returning coors if desired; allows a subset of `httpCors` options
+  cors?: CORSOptions; // for returning coors if desired; allows a subset of `httpCors` options
 }) => {
   const middlewares = [
     badRequestErrorMiddleware({ apiGateway: true }), // handle BadRequestErrors appropriately (i.e., dont log it as an error, but report to the user what failed)

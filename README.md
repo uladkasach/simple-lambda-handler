@@ -10,6 +10,8 @@ npm install --save simple-lambda-handler
 
 # usage
 
+### Standard Handler
+
 Here is a quick example that shows how you can wrap your handler logic, do additional validation beyond the input validation schema, and return a response.
 
 ```ts
@@ -22,11 +24,14 @@ const schema = Joi.object().keys({
   message: Joi.string().uuid().required(),
 });
 
-interface SendUserNotificationEvent {
-  userUuid: string;
-  message: string;
-}
-const handle = async ({ event }: { event: SendUserNotificationEvent }) => {
+const handle = async ({
+  event,
+}: {
+  event: {
+    userUuid: string;
+    message: string;
+  };
+}) => {
   // any additional validation you may want
   if (message.includes(PROFANITY)) throw new BadRequestError('message should not include profanity'); // wont show up as cloudwatch error, but will return user an error, since `instanceof BadRequestError`
 
@@ -44,6 +49,62 @@ export const handler = createStandardHandler({
 });
 ```
 
+### Api Gateway Handler
+
+Interacting with an APIGateway involves lots of additional concerns beyond those of a standard handler. This library exposes `createApiGatewayHandler` to quickly considerations such as statusCodes, cors, body serialization, and best security practices for headers.
+
+Here is an example that supports CORS with credentials as well as an auth token passed in the header.
+
+```ts
+// e.g., in `src/handlers/sendUserNotification.ts
+import { createStandardHandler, BadRequestError } from 'simple-lambda-handler';
+import Joi from 'joi';
+
+const schema = Joi.object()
+  .keys({
+    headers: Joi.object()
+      .keys({
+        authorization: Joi.string().required(), // if your api requires an auth token, you can enforce that its sent here
+      })
+      .required()
+      .unknown(),
+    body: Joi.object()
+      .keys({
+        userUuid: Joi.string().uuid().required(),
+        message: Joi.string().uuid().required(),
+      })
+      .required(),
+  })
+  .unknown(true); // api gateway object will have more keys - we just care about the ones above in this example
+
+const handle = async ({
+  headers,
+  event,
+}: {
+  headers: { authorization: string };
+  event: { body: { userId: string; message: string } };
+}): Promise<{ statusCode: 200; body: { awesomeResponse } }> => {
+  // any additional validation you may want
+  if (message.includes(PROFANITY)) throw new BadRequestError('message should not include profanity'); // will result in a `{ statusCode: 400, body: { errorMessage: 'message should not include profanity' } }` response and wont showup in cloudwatch as an error, since `instanceof BadRequestError`
+
+  // do your business logic here (e.g., call your logic layer)
+  const awesomeResponse = await sendUserNotification();
+
+  // if your code had an error somewhere along the code path
+  if (codeHadError) throw new Error('just to show what would happen if there is an internal service error'); // will result in a `{ statusCode: 500 }` response, without any details of the error, to ensure no secrets are leaked in unexpected error stacks
+
+  // return something
+  return { statusCode: 200, body: { awesomeResponse } };
+};
+
+export const handler = createStandardHandler({
+  log,
+  schema,
+  logic: handle,
+  cors: { origin: 'www.yoursite.com', withCredentials: true },
+});
+```
+
 # features
 
 ### Input Output Logging
@@ -56,13 +117,13 @@ Specifically:
 
 ```ts
 // on input
-log.debug('invocation start', { event: handler.event });
+log.debug('handler.input', { event: handler.event });
 
 // on output
-log.debug('invocation end', { response: handler.response });
+log.debug('handler.output', { response: handler.response });
 
 // on error
-log.error('invocation end', { errorMessage: handler.error.message, stackTrace: handler.error.stack });
+log.error('handler.output', { errorMessage: handler.error.message, stackTrace: handler.error.stack });
 ```
 
 ### Bad Request Error
@@ -115,7 +176,7 @@ export const handler = createStandardHandler({
 });
 ```
 
-In this example, if the user passes in a `uuid` instead of a `userUuid`, they would be told that they are missing a required input: `userUuid`.
+In this example, if the user passes in a `uuid` instead of a `userUuid`, they would be told that they are missing a required input, `userUuid`, with a `BadRequestError`.
 
 ### Extensibility
 
