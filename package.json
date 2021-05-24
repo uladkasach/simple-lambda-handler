@@ -1,11 +1,11 @@
 {
-  "name": "simple-lambda-handler",
+  "name": "simple-lambda-handlers",
   "version": "0.4.1",
   "description": "a simple and opinionated lambda handler library, built with middy",
   "author": "UladKasach @uladkasach",
   "license": "MIT",
-  "repository": "uladkasach/simple-lambda-handler",
-  "homepage": "https://github.com/uladkasach/simple-lambda-handler",
+  "repository": "uladkasach/simple-lambda-handlers",
+  "homepage": "https://github.com/uladkasach/simple-lambda-handlers",
   "keywords": [
     "aws",
     "lambda",
@@ -16,7 +16,7 @@
     "standard",
     "handler"
   ],
-  "bugs": "https://github.com/uladkasach/simple-lambda-handler/issues",
+  "bugs": "https://github.com/uladkasach/simple-lambda-handlers/issues",
   "main": "dist/index.js",
   "engines": {
     "node": ">=8.0.0"

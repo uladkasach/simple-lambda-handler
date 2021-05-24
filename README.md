@@ -1,11 +1,11 @@
-# simple-lambda-handler
+# simple-lambda-handlers
 
 a simple and opinionated lambda handler library, built with [middy](https://github.com/middyjs/middy).
 
 # installation
 
 ```
-npm install --save simple-lambda-handler
+npm install --save simple-lambda-handlers
 ```
 
 # usage
@@ -16,7 +16,7 @@ Here is a quick example that shows how you can wrap your handler logic, do addit
 
 ```ts
 // e.g., in `src/handlers/sendUserNotification.ts
-import { createStandardHandler, BadRequestError } from 'simple-lambda-handler';
+import { createStandardHandler, BadRequestError } from 'simple-lambda-handlers';
 import Joi from 'joi';
 
 const schema = Joi.object().keys({
@@ -57,7 +57,7 @@ Here is an example that supports CORS with credentials as well as an auth token 
 
 ```ts
 // e.g., in `src/handlers/sendUserNotification.ts
-import { createStandardHandler, BadRequestError } from 'simple-lambda-handler';
+import { createStandardHandler, BadRequestError } from 'simple-lambda-handlers';
 import Joi from 'joi';
 
 const schema = Joi.object()
@@ -135,7 +135,7 @@ This library takes care of that, so that the only errors that are reported as in
 Example:
 
 ```ts
-import { BadRequestError } from 'simple-lambda-handler';
+import { BadRequestError } from 'simple-lambda-handlers';
 // ...
 const user = await findUserByUuid({ uuid });
 if (!user) throw new BadRequestError(`user not found for uuid '${uuid}'`);
